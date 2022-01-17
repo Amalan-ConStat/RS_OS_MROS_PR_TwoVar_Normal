@@ -1,10 +1,10 @@
 
-# RM_AM_MF_PR_TwoVar_Uniform
+# RM_AM_MF_PR_TwoVar_Normal
 
 <!-- badges: start -->
 <!-- badges: end -->
 
-### Real Model vs Assumed Model vs Model Free method for the Poisson Regression with two variables where the covariate data is simulated from the Uniform distribution.
+### Real Model vs Assumed Model vs Model Free method for the Poisson Regression with two variables where the covariate data is simulated from the Normal distribution.
 
 A new model free method is compared with the existing OSMAC method under the circumstances where the initial sample size is same or otherwise for each simulation. 
 
