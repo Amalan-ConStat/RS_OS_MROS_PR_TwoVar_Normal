@@ -1,7 +1,7 @@
 Articles_Plots
 ================
 Amalan
-April 04, 2022
+April 09, 2022
 
 # Using Normal Distribution for Data
 
