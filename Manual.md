@@ -1,6 +1,6 @@
 Manual of comparing optimal subsampling with model robust optimal
-subsampling method for PoissonRegression (standardised Multivariate
-Normal Distribution)
+subsampling method for poisson regression (standardised Multivariate
+Normal distribution)
 ================
 
 # 1. Overview
@@ -8,7 +8,7 @@ Normal Distribution)
 -   The project ***“Normal_Distribution”*** or
     ***“RS_OS_MROS_PR_TwoVar_Normal”*** is developed for the purpose of
     conducting a simulation study such that estimated model parameters
-    of the Poisson regression model can be compared through the obtained
+    of the poisson regression model can be compared through the obtained
     informative samples from the Big Data using optimal sub-sampling and
     model robust optimal sub-sampling methods.
 
@@ -58,7 +58,7 @@ Normal Distribution)
 
 -   Generate and store Big Data.
 
--   Based on the real model of the Poisson regression data we have four
+-   Based on the real model of the poisson regression data we have four
     folders and in each folder their respective Big Data sets are stored
     by using ***Checking_SP_Model_1\_Normal_Special.R***.
 
@@ -85,8 +85,7 @@ Normal Distribution)
     *x*<sub>1</sub>, *x*<sub>2</sub>, *x*<sub>1</sub><sup>2</sup>, *x*<sub>2</sub><sup>2</sup>.
 
 -   For each model structure covariate data was generated only through
-    zero covariance matrices with mean of zeros from the Multivariate
-    Normal distribution.
+    standardised Multivariate Normal distribution.
 
 ## 2.2 Simulation_Setup
 
@@ -129,7 +128,7 @@ methods.
     information are estimated at each simulation and are applied for the
     generated big data.
 
-#### 2.2.1.4 OSMAC_Algorithm.R and OSMAC_Setup.R \[Non Identical r0\]
+#### 2.2.1.5 OSMAC_Algorithm.R and OSMAC_Setup.R \[Non Identical r0\]
 
 -   The optimal sub-sampling and a setup to apply these methods such
     that model parameters and model information are estimated at each

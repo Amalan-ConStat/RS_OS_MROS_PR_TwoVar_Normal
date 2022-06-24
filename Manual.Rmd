@@ -1,5 +1,5 @@
 ---
-title: "Manual of comparing optimal subsampling with model robust optimal subsampling method for PoissonRegression (standardised Multivariate Normal Distribution)"
+title: "Manual of comparing optimal subsampling with model robust optimal subsampling method for poisson regression (standardised Multivariate Normal distribution)"
 output: github_document
 ---
 
@@ -9,7 +9,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # 1. Overview
 
-* The project ***"Normal_Distribution"*** or ***"RS_OS_MROS_PR_TwoVar_Normal"*** is developed for the purpose of conducting a simulation study such that estimated model parameters of the Poisson regression model can be compared through the obtained informative samples from the Big Data using optimal sub-sampling and model robust optimal sub-sampling methods.
+* The project ***"Normal_Distribution"*** or ***"RS_OS_MROS_PR_TwoVar_Normal"*** is developed for the purpose of conducting a simulation study such that estimated model parameters of the poisson regression model can be compared through the obtained informative samples from the Big Data using optimal sub-sampling and model robust optimal sub-sampling methods.
 
 * This document aims to state every important part of this R project thoroughly in terms of folder structure related to used sub-sampling methods. 
 
@@ -41,7 +41,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 * Generate and store Big Data.
 
-* Based on the real model of the Poisson regression data we have four folders and in each folder their respective Big Data sets are stored by using ***Checking_SP_Model_1_Normal_Special.R***.
+* Based on the real model of the poisson regression data we have four folders and in each folder their respective Big Data sets are stored by using ***Checking_SP_Model_1_Normal_Special.R***.
 
 * To ensure that the data generated from the true model performs better than the assumed models run ***Check_Data.Rmd*** and look at the plots stored as **Model_[1 or 2 or 3 or 4]_X[1 or 2]**.
 
@@ -53,7 +53,7 @@ knitr::opts_chunk$set(echo = TRUE)
 3. $\theta=[-1.0, 0.5, 0.5, 0.3]$ generates data for Model 3 of $x_1,x_2,x^2_2$.
 4. $\theta=[-1.0, 0.5, 0.5, 0.5, 0.5]$ generates data for Model 4 of $x_1,x_2,x^2_1,x^2_2$.
 
-* For each model structure covariate data was generated only through zero covariance matrices with mean of zeros from the Multivariate Normal distribution. 
+* For each model structure covariate data was generated only through standardised Multivariate Normal distribution. 
 
 ## 2.2 Simulation_Setup
 
@@ -85,7 +85,7 @@ We need to transfer two forms of data,
 
 * The optimal sub-sampling, model robust optimal sub-sampling and a setup to apply these methods such that model parameters and model information are estimated at each simulation and are applied for the generated big data.
 
-#### 2.2.1.4 OSMAC_Algorithm.R and OSMAC_Setup.R [Non Identical r0]
+#### 2.2.1.5 OSMAC_Algorithm.R and OSMAC_Setup.R [Non Identical r0]
 
 * The optimal sub-sampling and a setup to apply these methods such that model parameters and model information are estimated at each simulation and are applied for the generated big data.
 
