@@ -48,10 +48,10 @@ knitr::opts_chunk$set(echo = TRUE)
 * In the Rscript, ***Replicates*** - number of unique simulations, ***Subsample_Size*** - target sample size, ***N*** - Big data size, ***Theta*** - Real model parameters, ***r0*** - initial sample size for optimal and model robust optimal sub-sampling.
 
 * As of now the model parameters and their respective response compositions are 
-1. $\theta=[-1.0, 0.5, 0.1]$ generates data for Model 1 of $x_1,x_2$.
-2. $\theta=[-1.0, 0.5, 0.5, 0.7]$ generates data for Model 2 of $x_1,x_2,x^2_1$.
-3. $\theta=[-1.0, 0.5, 0.5, 0.3]$ generates data for Model 3 of $x_1,x_2,x^2_2$.
-4. $\theta=[-1.0, 0.5, 0.5, 0.5, 0.5]$ generates data for Model 4 of $x_1,x_2,x^2_1,x^2_2$.
+1. $\theta=[1.0, 0.5, 0.1]$ generates data for Model 1 of $x_1,x_2$.
+2. $\theta=[1.0,-0.3, 0.3, 0.1]$ generates data for Model 2 of $x_1,x_2,x^2_1$.
+3. $\theta=[1.0, 0.3,-0.3, 0.1]$ generates data for Model 3 of $x_1,x_2,x^2_2$.
+4. $\theta=[1.0, 0.3, 0.3,-0.3, 0.1]$ generates data for Model 4 of $x_1,x_2,x^2_1,x^2_2$.
 
 * For each model structure covariate data was generated only through standardised Multivariate Normal distribution. 
 

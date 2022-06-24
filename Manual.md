@@ -75,13 +75,13 @@ Normal distribution)
 -   As of now the model parameters and their respective response
     compositions are
 
-1.  *θ* = \[−1.0,0.5,0.1\] generates data for Model 1 of
+1.  *θ* = \[1.0,0.5,0.1\] generates data for Model 1 of
     *x*<sub>1</sub>, *x*<sub>2</sub>.
-2.  *θ* = \[−1.0,0.5,0.5,0.7\] generates data for Model 2 of
+2.  *θ* = \[1.0,−0.3,0.3,0.1\] generates data for Model 2 of
     *x*<sub>1</sub>, *x*<sub>2</sub>, *x*<sub>1</sub><sup>2</sup>.
-3.  *θ* = \[−1.0,0.5,0.5,0.3\] generates data for Model 3 of
+3.  *θ* = \[1.0,0.3,−0.3,0.1\] generates data for Model 3 of
     *x*<sub>1</sub>, *x*<sub>2</sub>, *x*<sub>2</sub><sup>2</sup>.
-4.  *θ* = \[−1.0,0.5,0.5,0.5,0.5\] generates data for Model 4 of
+4.  *θ* = \[1.0,0.3,0.3,−0.3,0.1\] generates data for Model 4 of
     *x*<sub>1</sub>, *x*<sub>2</sub>, *x*<sub>1</sub><sup>2</sup>, *x*<sub>2</sub><sup>2</sup>.
 
 -   For each model structure covariate data was generated only through
