@@ -20,8 +20,8 @@ AlgTwoStp <- function(r1=r1, r2=r2,Y,X,n,Real_Data,alpha,combs,All_Covariates){
     PI.prop <- rep(1/n, n)
     idx.prop <- sample(1:n, r1, T, PI.prop)
     
-    x.prop<-lapply(1:length(combs),function(j){
-      X[idx.prop,All_Covariates %in% combs[[j]]] # Assumed Data 
+    x.prop<-lapply(1:length(combs),function(a){
+      X[idx.prop,All_Covariates %in% combs[[a]]] # Assumed Data 
     })
     y.prop <- Y[idx.prop,]  # Assumed Data 
     
@@ -30,16 +30,16 @@ AlgTwoStp <- function(r1=r1, r2=r2,Y,X,n,Real_Data,alpha,combs,All_Covariates){
     
     pinv.prop <- rep(n,r1)
     
-    fit.prop <- lapply(1:length(combs), function(j){
-      glm(y.prop~x.prop[[j]]-1,family = "poisson")# Assumed Data
+    fit.prop <- lapply(1:length(combs), function(a){
+      glm(y.prop~x.prop[[a]]-1,family = "poisson")# Assumed Data
     })
     fit_Real.prop <- glm(y_Real.prop~x_Real.prop-1,family = "poisson") # Real Data
     
     beta.prop<-list()
-    for (j in 1:length(combs)) 
+    for (a in 1:length(combs)) 
       {
-      beta.prop[[j]] <- fit.prop[[j]]$coefficients # Assumed Data
-      if(anyNA(beta.prop[[j]]))
+      beta.prop[[a]] <- fit.prop[[a]]$coefficients # Assumed Data
+      if(anyNA(beta.prop[[a]]))
         {
         return(list(opt=NA, msg="first stage not converge"))
         }
@@ -49,8 +49,8 @@ AlgTwoStp <- function(r1=r1, r2=r2,Y,X,n,Real_Data,alpha,combs,All_Covariates){
     if(anyNA(beta_Real.prop[1]))
       return(list(opt=NA, msg="first stage not converge"))
     
-    P.prop  <- lapply(1:length(combs),function(j){
-      exp(X[,All_Covariates %in% combs[[j]] ] %*% beta.prop[[j]]) # Assumed Data
+    P.prop  <- lapply(1:length(combs),function(a){
+      exp(X[,All_Covariates %in% combs[[a]] ] %*% beta.prop[[a]]) # Assumed Data
     })
     P_Real.prop  <- exp(X_Real %*% beta_Real.prop) # Real Data
     
@@ -119,27 +119,53 @@ AlgTwoStp <- function(r1=r1, r2=r2,Y,X,n,Real_Data,alpha,combs,All_Covariates){
     #Sample.mMSE_join<-list()
     #Sample.mVc_join<-list()
     
+    ## mVc
+    PI_Real.mVc <- sqrt((Y - P_Real.prop)^2 * rowSums(X_Real^2)) # Real Data
+    PI_Real.mVc <- PI_Real.mVc / sum(PI_Real.mVc) # Real Data
+    
+    PI_Assumed_Old.mVc <- lapply(1:length(combs), function(a){
+      sqrt((Y - P.prop[[a]])^2 * rowSums(X[,All_Covariates %in% combs[[a]] ]^2)) # Assumed Data Old probabilities
+    } )
+    
+    PI_Assumed_Old.mVc <- lapply(1:length(combs), function(a){
+      PI_Assumed_Old.mVc[[a]] / sum(PI_Assumed_Old.mVc[[a]]) # Assumed Data Old probabilities
+    })
+    
+    PI_join.mVc<-rowSums2(cbind(alpha[1]*PI_Real.mVc,
+                                do.call(cbind,PI_Assumed_Old.mVc)%*%diag(alpha[-1]) ) )
+    
+    ## mMSE
+    p_Real.prop <- P_Real.prop[idx.prop] # Real data
+    w_Real.prop <- p_Real.prop # Real data
+    W_Real.prop <- solve(t(x_Real.prop) %*% (x_Real.prop * w_Real.prop * pinv.prop)) # Real data
+    
+    p_Assumed.prop <- lapply(1:length(combs),function(a){
+      P.prop[[a]][idx.prop] # Assumed data
+    })
+    w_Assumed.prop <- p_Assumed.prop # Assumed data
+    W_Assumed.prop <- lapply(1:length(combs),function(a){
+      solve(t(x.prop[[a]]) %*% (x.prop[[a]] * w_Assumed.prop[[a]] * pinv.prop)) # Assumed data
+    })
+    
+    PI_Real.mMSE <- sqrt((Y_Real - P_Real.prop)^2 * rowSums((X_Real%*%W_Real.prop)^2)) # Real data
+    PI_Real.mMSE <- PI_Real.mMSE / sum(PI_Real.mMSE) # Real data
+    
+    PI_Assumed_Old.mMSE <- lapply(1:length(combs),function(a){
+      sqrt((Y - P.prop[[a]])^2 * rowSums((X[,All_Covariates %in% combs[[a]] ]%*%W_Assumed.prop[[a]])^2)) # Assumed data
+    })
+    
+    PI_Assumed_Old.mMSE <- lapply(1:length(combs),function(a){
+      PI_Assumed_Old.mMSE[[a]] / sum(PI_Assumed_Old.mMSE[[a]]) # Assumed data
+    })
+    
+    PI_join.mMSE<-rowSums2(cbind(alpha[1]*PI_Real.mMSE,(do.call(cbind,PI_Assumed_Old.mMSE)%*%diag(alpha[-1]))))  # Joined data
+    
     for (i in 1:length(r2)) 
     {
-      ## mVC
-      PI_Real.mVc <- sqrt((Y - P_Real.prop)^2 * rowSums(X_Real^2)) # Real Data
-      PI_Real.mVc <- PI_Real.mVc / sum(PI_Real.mVc) # Real Data
-      
-      PI_Assumed_Old.mVc <- lapply(1:length(combs), function(j){
-        sqrt((Y - P.prop[[j]])^2 * rowSums(X[,All_Covariates %in% combs[[j]] ]^2)) # Assumed Data Old probabilities
-      } )
-        
-      PI_Assumed_Old.mVc <- lapply(1:length(combs), function(j){
-        PI_Assumed_Old.mVc[[j]] / sum(PI_Assumed_Old.mVc[[j]]) # Assumed Data Old probabilities
-      })
-        
-      PI_join.mVc<-rowSums2(cbind(alpha[1]*PI_Real.mVc,
-                                  do.call(cbind,PI_Assumed_Old.mVc)%*%diag(alpha[-1]) ) )
-        
-      
+      ## mVc
       idx_Real.mVc <- sample(1:n, r2[i]-r1, T, PI_Real.mVc) # Real Data 
-      idx_Assumed.mVc <- lapply(1:length(combs), function(j){
-        sample(1:n, r2[i]-r1, T, PI_Assumed_Old.mVc[[j]]) # Assumed Data Old probabilities
+      idx_Assumed.mVc <- lapply(1:length(combs), function(a){
+        sample(1:n, r2[i]-r1, T, PI_Assumed_Old.mVc[[a]]) # Assumed Data Old probabilities
       })
       idx_join.mVc <- sample(1:n, r2[i]-r1, T, PI_join.mVc) # Joined Real Data
       
@@ -147,12 +173,12 @@ AlgTwoStp <- function(r1=r1, r2=r2,Y,X,n,Real_Data,alpha,combs,All_Covariates){
       y_Real.mVc <- Y_Real[c(idx_Real.mVc, idx.prop)] # Real Data
       pinv_Real.mVc <- c(1 / PI_Real.mVc[idx_Real.mVc], pinv.prop)
       
-      x_Assumed.mVc <-lapply(1:length(combs),function(j){
-        X_Real[c(idx_Assumed.mVc[[j]], idx.prop),] # Assumed Data
+      x_Assumed.mVc <-lapply(1:length(combs),function(a){
+        X_Real[c(idx_Assumed.mVc[[a]], idx.prop),] # Assumed Data
       }) 
         
-      y_Assumed.mVc <- lapply(1:length(combs),function(j){
-        Y_Real[c(idx_Assumed.mVc[[j]], idx.prop)] # Assumed Data
+      y_Assumed.mVc <- lapply(1:length(combs),function(a){
+        Y_Real[c(idx_Assumed.mVc[[a]], idx.prop)] # Assumed Data
       })
         
       x_join.mVc <- X_Real[c(idx_join.mVc, idx.prop),] # Joined Data
@@ -161,27 +187,27 @@ AlgTwoStp <- function(r1=r1, r2=r2,Y,X,n,Real_Data,alpha,combs,All_Covariates){
       
       fit_Real.mVc <- glm(y_Real.mVc~x_Real.mVc-1, family = "poisson",weights=pinv_Real.mVc) # Real Data
       
-      fit_Assumed_Old.mVc <-lapply(1:length(combs), function(j){
+      fit_Assumed_Old.mVc <-lapply(1:length(combs), function(a){
         pinv_Assumed_Old.mVc<-list()
-        pinv_Assumed_Old.mVc[[j]]<-c(1 / PI_Assumed_Old.mVc[[j]][idx_Assumed.mVc[[j]]], pinv.prop)
-        glm(y_Assumed.mVc[[j]]~x_Assumed.mVc[[j]]-1, family = "poisson", 
-            weights=pinv_Assumed_Old.mVc[[j]]) # Assumed Data Old probabilities
+        pinv_Assumed_Old.mVc[[a]]<-c(1 / PI_Assumed_Old.mVc[[a]][idx_Assumed.mVc[[a]]], pinv.prop)
+        glm(y_Assumed.mVc[[a]]~x_Assumed.mVc[[a]]-1, family = "poisson", 
+            weights=pinv_Assumed_Old.mVc[[a]]) # Assumed Data Old probabilities
       }) 
       
-      PI_Assumed_New.mVc<-lapply(1:length(combs), function(j){
-        sqrt((Y_Real[c(idx_Assumed.mVc[[j]])] - P_Real.prop[c(idx_Assumed.mVc[[j]])])^2 * 
-               rowSums(X_Real[c(idx_Assumed.mVc[[j]]),]^2)) 
+      PI_Assumed_New.mVc<-lapply(1:length(combs), function(a){
+        sqrt((Y_Real[c(idx_Assumed.mVc[[a]])] - P_Real.prop[c(idx_Assumed.mVc[[a]])])^2 * 
+               rowSums(X_Real[c(idx_Assumed.mVc[[a]]),]^2)) 
       }) 
       Full_PI_Assumed_New.mVc<-sqrt((Y_Real - P_Real.prop)^2 * rowSums(X_Real^2)) 
-      PI_Assumed_New.mVc<-lapply(1:length(combs), function(j){
-        PI_Assumed_New.mVc[[j]]/sum(Full_PI_Assumed_New.mVc) # Assumed Data New Probabilities
+      PI_Assumed_New.mVc<-lapply(1:length(combs), function(a){
+        PI_Assumed_New.mVc[[a]]/sum(Full_PI_Assumed_New.mVc) # Assumed Data New Probabilities
       })
         
-      fit_Assumed_New.mVc <-lapply(1:length(combs), function(j){
+      fit_Assumed_New.mVc <-lapply(1:length(combs), function(a){
         pinv_Assumed_New.mVc<-list()
-        pinv_Assumed_New.mVc[[j]]<-c(1 / PI_Assumed_New.mVc[[j]], pinv.prop)
-        glm(y_Assumed.mVc[[j]]~x_Assumed.mVc[[j]]-1, family = "poisson", 
-               weights=pinv_Assumed_New.mVc[[j]]) # Assumed Data New probabilities
+        pinv_Assumed_New.mVc[[a]]<-c(1 / PI_Assumed_New.mVc[[a]], pinv.prop)
+        glm(y_Assumed.mVc[[a]]~x_Assumed.mVc[[a]]-1, family = "poisson", 
+               weights=pinv_Assumed_New.mVc[[a]]) # Assumed Data New probabilities
       }) 
       fit_join.mVc <- glm(y_join.mVc~x_join.mVc-1,family = "poisson", 
                           weights=pinv_join.mVc) # Joined Data 
@@ -227,25 +253,25 @@ AlgTwoStp <- function(r1=r1, r2=r2,Y,X,n,Real_Data,alpha,combs,All_Covariates){
       Bias_mVc_Real[i,]<-Cordeiro(XData=x_Real.mVc,With_bias = beta.mVc_Real[i,])
       
       # Assumed Data Old probabilities
-      pi<- lapply(1:length(combs), function(j){
-        c(exp(x_Assumed.mVc[[j]] %*% beta.mVc_Old[[j]][i,]))
+      pi<- lapply(1:length(combs), function(a){
+        c(exp(x_Assumed.mVc[[a]] %*% beta.mVc_Old[[a]][i,]))
       })
       
-      Mx<-lapply(1:length(combs),function(j){
+      Mx<-lapply(1:length(combs),function(a){
         pinv_Assumed_Old.mVc<-list()
-        pinv_Assumed_Old.mVc[[j]]<-c(1 / PI_Assumed_Old.mVc[[j]][idx_Assumed.mVc[[j]]], pinv.prop)
-        solve(t(x_Assumed.mVc[[j]]) %*% (x_Assumed.mVc[[j]] * pi[[j]] * pinv_Assumed_Old.mVc[[j]]) )
+        pinv_Assumed_Old.mVc[[a]]<-c(1 / PI_Assumed_Old.mVc[[a]][idx_Assumed.mVc[[a]]], pinv.prop)
+        solve(t(x_Assumed.mVc[[a]]) %*% (x_Assumed.mVc[[a]] * pi[[a]] * pinv_Assumed_Old.mVc[[a]]) )
       }) 
       
-      V_Temp<-lapply(1:length(combs), function(j){
+      V_Temp<-lapply(1:length(combs), function(a){
         pinv_Assumed_Old.mVc<-list()
-        pinv_Assumed_Old.mVc[[j]]<-c(1 / PI_Assumed_Old.mVc[[j]][idx_Assumed.mVc[[j]]], pinv.prop)
-        t(x_Assumed.mVc[[j]]) %*% (x_Assumed.mVc[[j]] * 
-                                     ((as.vector(y_Assumed.mVc[[j]])-pi[[j]]) * pinv_Assumed_Old.mVc[[j]])^2)
+        pinv_Assumed_Old.mVc[[a]]<-c(1 / PI_Assumed_Old.mVc[[a]][idx_Assumed.mVc[[a]]], pinv.prop)
+        t(x_Assumed.mVc[[a]]) %*% (x_Assumed.mVc[[a]] * 
+                                     ((as.vector(y_Assumed.mVc[[a]])-pi[[a]]) * pinv_Assumed_Old.mVc[[a]])^2)
       })
         
-      V_Final<-lapply(1:length(combs),function(j){
-        Mx[[j]] %*% V_Temp[[j]] %*% Mx[[j]]
+      V_Final<-lapply(1:length(combs),function(a){
+        Mx[[a]] %*% V_Temp[[a]] %*% Mx[[a]]
       }) 
       
       for (j in 1:length(combs)) 
@@ -255,25 +281,25 @@ AlgTwoStp <- function(r1=r1, r2=r2,Y,X,n,Real_Data,alpha,combs,All_Covariates){
       }
       
       # Assumed Data New probabilities
-      pi<- lapply(1:length(combs),function(j){
-        c(exp(x_Assumed.mVc[[j]] %*% beta.mVc_New[[j]][i,]))
+      pi<- lapply(1:length(combs),function(a){
+        c(exp(x_Assumed.mVc[[a]] %*% beta.mVc_New[[a]][i,]))
       })
       
-      Mx<-lapply(1:length(combs),function(j){
+      Mx<-lapply(1:length(combs),function(a){
         pinv_Assumed_New.mVc<-list()
-        pinv_Assumed_New.mVc[[j]]<-c(1 / PI_Assumed_New.mVc[[j]], pinv.prop)
-        solve(t(x_Assumed.mVc[[j]]) %*% (x_Assumed.mVc[[j]] * pi[[j]]*pinv_Assumed_New.mVc[[j]] ))
+        pinv_Assumed_New.mVc[[a]]<-c(1 / PI_Assumed_New.mVc[[a]], pinv.prop)
+        solve(t(x_Assumed.mVc[[a]]) %*% (x_Assumed.mVc[[a]] * pi[[a]]*pinv_Assumed_New.mVc[[a]] ))
       })
       
-      V_Temp<-lapply(1:length(combs),function(j){
+      V_Temp<-lapply(1:length(combs),function(a){
         pinv_Assumed_New.mVc<-list()
-        pinv_Assumed_New.mVc[[j]]<-c(1 / PI_Assumed_New.mVc[[j]], pinv.prop)
-        t(x_Assumed.mVc[[j]]) %*% (x_Assumed.mVc[[j]] * 
-                                     ((as.vector(y_Assumed.mVc[[j]])-pi[[j]])*pinv_Assumed_New.mVc[[j]])^2)
+        pinv_Assumed_New.mVc[[a]]<-c(1 / PI_Assumed_New.mVc[[a]], pinv.prop)
+        t(x_Assumed.mVc[[a]]) %*% (x_Assumed.mVc[[a]] * 
+                                     ((as.vector(y_Assumed.mVc[[a]])-pi[[a]])*pinv_Assumed_New.mVc[[a]])^2)
       })
       
-      V_Final<-lapply(1:length(combs),function(j){
-        Mx[[j]] %*% V_Temp[[j]] %*% Mx[[j]]
+      V_Final<-lapply(1:length(combs),function(a){
+        Mx[[a]] %*% V_Temp[[a]] %*% Mx[[a]]
         }) 
       
       for (j in 1:length(combs)) 
@@ -292,34 +318,9 @@ AlgTwoStp <- function(r1=r1, r2=r2,Y,X,n,Real_Data,alpha,combs,All_Covariates){
       Bias_mVc_join[i,]<-Cordeiro(XData=x_join.mVc,With_bias = beta.mVc_join[i,])    
       
       ## mMSE
-      p_Real.prop <- P_Real.prop[idx.prop] # Real data
-      w_Real.prop <- p_Real.prop # Real data
-      W_Real.prop <- solve(t(x_Real.prop) %*% (x_Real.prop * w_Real.prop * pinv.prop)) # Real data
-      
-      p_Assumed.prop <- lapply(1:length(combs),function(j){
-        P.prop[[j]][idx.prop] # Assumed data
-      })
-      w_Assumed.prop <- p_Assumed.prop # Assumed data
-      W_Assumed.prop <- lapply(1:length(combs),function(j){
-        solve(t(x.prop[[j]]) %*% (x.prop[[j]] * w_Assumed.prop[[j]] * pinv.prop)) # Assumed data
-      })
-      
-      PI_Real.mMSE <- sqrt((Y_Real - P_Real.prop)^2 * rowSums((X_Real%*%W_Real.prop)^2)) # Real data
-      PI_Real.mMSE <- PI_Real.mMSE / sum(PI_Real.mMSE) # Real data
-      
-      PI_Assumed_Old.mMSE <- lapply(1:length(combs),function(j){
-        sqrt((Y - P.prop[[j]])^2 * rowSums((X[,All_Covariates %in% combs[[j]] ]%*%W_Assumed.prop[[j]])^2)) # Assumed data
-      })
-        
-      PI_Assumed_Old.mMSE <- lapply(1:length(combs),function(j){
-        PI_Assumed_Old.mMSE[[j]] / sum(PI_Assumed_Old.mMSE[[j]]) # Assumed data
-      })
-        
-      PI_join.mMSE<-rowSums2(cbind(alpha[1]*PI_Real.mMSE,(do.call(cbind,PI_Assumed_Old.mMSE)%*%diag(alpha[-1]))))  # Joined data
-      
       idx_Real.mMSE <- sample(1:n, r2[i]-r1, T, PI_Real.mMSE) # Real data
-      idx_Assumed.mMSE <- lapply(1:length(combs),function(j){
-        sample(1:n, r2[i]-r1, T, PI_Assumed_Old.mMSE[[j]]) # Assumed data
+      idx_Assumed.mMSE <- lapply(1:length(combs),function(a){
+        sample(1:n, r2[i]-r1, T, PI_Assumed_Old.mMSE[[a]]) # Assumed data
       }) 
       idx_join.mMSE <- sample(1:n, r2[i]-r1, T, PI_join.mMSE) # Joined Data
       
@@ -327,11 +328,11 @@ AlgTwoStp <- function(r1=r1, r2=r2,Y,X,n,Real_Data,alpha,combs,All_Covariates){
       y_Real.mMSE <- Y_Real[c(idx_Real.mMSE, idx.prop)] # Real Data
       pinv_Real.mMSE<-c(1 / PI_Real.mMSE[idx_Real.mMSE], pinv.prop)
       
-      x_Assumed.mMSE <- lapply(1:length(combs),function(j){
-        X_Real[c(idx_Assumed.mMSE[[j]], idx.prop),] # Assumed Data
+      x_Assumed.mMSE <- lapply(1:length(combs),function(a){
+        X_Real[c(idx_Assumed.mMSE[[a]], idx.prop),] # Assumed Data
       })
-      y_Assumed.mMSE <- lapply(1:length(combs),function(j){
-        Y_Real[c(idx_Assumed.mMSE[[j]], idx.prop)] # Assumed Data
+      y_Assumed.mMSE <- lapply(1:length(combs),function(a){
+        Y_Real[c(idx_Assumed.mMSE[[a]], idx.prop)] # Assumed Data
       })
       
       x_join.mMSE <- X_Real[c(idx_join.mMSE, idx.prop),] # Joined Data
@@ -340,28 +341,28 @@ AlgTwoStp <- function(r1=r1, r2=r2,Y,X,n,Real_Data,alpha,combs,All_Covariates){
       
       fit_Real.mMSE <- glm(y_Real.mMSE~x_Real.mMSE-1,family = "poisson", 
                            weights=pinv_Real.mMSE) # Real Data
-      fit_Assumed_Old.mMSE <- lapply(1:length(combs),function(j){
+      fit_Assumed_Old.mMSE <- lapply(1:length(combs),function(a){
         pinv_Assumed_Old.mMSE<-list()
-        pinv_Assumed_Old.mMSE[[j]]<-c(1 / PI_Assumed_Old.mMSE[[j]][idx_Assumed.mMSE[[j]]], pinv.prop)
-        glm(y_Assumed.mMSE[[j]]~x_Assumed.mMSE[[j]]-1,family = "poisson", 
-            weights = pinv_Assumed_Old.mMSE[[j]]) # Assumed Data Old probabilities
+        pinv_Assumed_Old.mMSE[[a]]<-c(1 / PI_Assumed_Old.mMSE[[a]][idx_Assumed.mMSE[[a]]], pinv.prop)
+        glm(y_Assumed.mMSE[[a]]~x_Assumed.mMSE[[a]]-1,family = "poisson", 
+            weights = pinv_Assumed_Old.mMSE[[a]]) # Assumed Data Old probabilities
       })
         
-      PI_Assumed_New.mMSE<-lapply(1:length(combs),function(j){
-        sqrt((Y_Real[c(idx_Assumed.mMSE[[j]])] - P_Real.prop[c(idx_Assumed.mMSE[[j]])])^2 * 
-               rowSums((X_Real[c(idx_Assumed.mMSE[[j]]),]%*%W_Real.prop)^2)) 
+      PI_Assumed_New.mMSE<-lapply(1:length(combs),function(a){
+        sqrt((Y_Real[c(idx_Assumed.mMSE[[a]])] - P_Real.prop[c(idx_Assumed.mMSE[[a]])])^2 * 
+               rowSums((X_Real[c(idx_Assumed.mMSE[[a]]),]%*%W_Real.prop)^2)) 
       }) 
         
       Full_PI_Assumed_New.mMSE<-sqrt((Y_Real - P_Real.prop)^2 * rowSums((X_Real%*%W_Real.prop)^2)) 
-      PI_Assumed_New.mMSE<-lapply(1:length(combs), function(j){
-        PI_Assumed_New.mMSE[[j]]/sum(Full_PI_Assumed_New.mMSE) # Assumed Data New Probabilities
+      PI_Assumed_New.mMSE<-lapply(1:length(combs), function(a){
+        PI_Assumed_New.mMSE[[a]]/sum(Full_PI_Assumed_New.mMSE) # Assumed Data New Probabilities
       })
         
-      fit_Assumed_New.mMSE <- lapply(1:length(combs),function(j){
+      fit_Assumed_New.mMSE <- lapply(1:length(combs),function(a){
         pinv_Assumed_New.mMSE<-list()
-        pinv_Assumed_New.mMSE[[j]]<-c(1 /PI_Assumed_New.mMSE[[j]], pinv.prop)
-        glm(y_Assumed.mMSE[[j]]~x_Assumed.mMSE[[j]]-1,family = "poisson", 
-            weights=pinv_Assumed_New.mMSE[[j]]) # Assumed Data New probabilities
+        pinv_Assumed_New.mMSE[[a]]<-c(1 /PI_Assumed_New.mMSE[[a]], pinv.prop)
+        glm(y_Assumed.mMSE[[a]]~x_Assumed.mMSE[[a]]-1,family = "poisson", 
+            weights=pinv_Assumed_New.mMSE[[a]]) # Assumed Data New probabilities
       })
         
       fit_join.mMSE <- glm(y_join.mMSE~x_join.mMSE-1, family = "poisson", 
@@ -406,25 +407,25 @@ AlgTwoStp <- function(r1=r1, r2=r2,Y,X,n,Real_Data,alpha,combs,All_Covariates){
       Bias_mMSE_Real[i,]<-Cordeiro(XData=x_Real.mMSE,With_bias = beta.mMSE_Real[i,])
       
       # Assumed Data Old probabilities
-      pi<-lapply(1:length(combs),function(j){
-        c(exp(x_Assumed.mMSE[[j]] %*% beta.mMSE_Old[[j]][i,]))
+      pi<-lapply(1:length(combs),function(a){
+        c(exp(x_Assumed.mMSE[[a]] %*% beta.mMSE_Old[[a]][i,]))
       }) 
       
-      Mx<-lapply(1:length(combs),function(j){
+      Mx<-lapply(1:length(combs),function(a){
         pinv_Assumed_Old.mMSE<-list()
-        pinv_Assumed_Old.mMSE[[j]]<-c(1 / PI_Assumed_Old.mMSE[[j]][idx_Assumed.mMSE[[j]]], pinv.prop)
-        solve(t(x_Assumed.mMSE[[j]]) %*% (x_Assumed.mMSE[[j]] * pi[[j]]*pinv_Assumed_Old.mMSE[[j]]))
+        pinv_Assumed_Old.mMSE[[a]]<-c(1 / PI_Assumed_Old.mMSE[[a]][idx_Assumed.mMSE[[a]]], pinv.prop)
+        solve(t(x_Assumed.mMSE[[a]]) %*% (x_Assumed.mMSE[[a]] * pi[[a]]*pinv_Assumed_Old.mMSE[[a]]))
       })
       
-      V_Temp<-lapply(1:length(combs),function(j){
+      V_Temp<-lapply(1:length(combs),function(a){
         pinv_Assumed_Old.mMSE<-list()
-        pinv_Assumed_Old.mMSE[[j]]<-c(1 / PI_Assumed_Old.mMSE[[j]][idx_Assumed.mMSE[[j]]], pinv.prop)
-        t(x_Assumed.mMSE[[j]]) %*% (x_Assumed.mMSE[[j]]*
-                                      ((as.vector(y_Assumed.mMSE[[j]])-pi[[j]])*pinv_Assumed_Old.mMSE[[j]])^2)
+        pinv_Assumed_Old.mMSE[[a]]<-c(1 / PI_Assumed_Old.mMSE[[a]][idx_Assumed.mMSE[[a]]], pinv.prop)
+        t(x_Assumed.mMSE[[a]]) %*% (x_Assumed.mMSE[[a]]*
+                                      ((as.vector(y_Assumed.mMSE[[a]])-pi[[a]])*pinv_Assumed_Old.mMSE[[a]])^2)
       })
       
-      V_Final<-lapply(1:length(combs),function(j){
-        Mx[[j]] %*% V_Temp[[j]] %*% Mx[[j]]
+      V_Final<-lapply(1:length(combs),function(a){
+        Mx[[a]] %*% V_Temp[[a]] %*% Mx[[a]]
       }) 
       
       for (j in 1:length(combs)) 
@@ -434,25 +435,25 @@ AlgTwoStp <- function(r1=r1, r2=r2,Y,X,n,Real_Data,alpha,combs,All_Covariates){
       }
       
       # Assumed Data New probabilities
-      pi<- lapply(1:length(combs),function(j){
-        c(exp(x_Assumed.mMSE[[j]] %*% beta.mMSE_New[[j]][i,]))
+      pi<- lapply(1:length(combs),function(a){
+        c(exp(x_Assumed.mMSE[[a]] %*% beta.mMSE_New[[a]][i,]))
       }) 
       
-      Mx<-lapply(1:length(combs),function(j){
+      Mx<-lapply(1:length(combs),function(a){
         pinv_Assumed_New.mMSE<-list()
-        pinv_Assumed_New.mMSE[[j]]<-c(1 / PI_Assumed_New.mMSE[[j]], pinv.prop)
-        solve(t(x_Assumed.mMSE[[j]]) %*% (x_Assumed.mMSE[[j]] * pi[[j]] * pinv_Assumed_New.mMSE[[j]]) )
+        pinv_Assumed_New.mMSE[[a]]<-c(1 / PI_Assumed_New.mMSE[[a]], pinv.prop)
+        solve(t(x_Assumed.mMSE[[a]]) %*% (x_Assumed.mMSE[[a]] * pi[[a]] * pinv_Assumed_New.mMSE[[a]]) )
       })
       
-      V_Temp<-lapply(1:length(combs),function(j){
+      V_Temp<-lapply(1:length(combs),function(a){
         pinv_Assumed_New.mMSE<-list()
-        pinv_Assumed_New.mMSE[[j]]<-c(1 / PI_Assumed_New.mMSE[[j]], pinv.prop)
-        t(x_Assumed.mMSE[[j]]) %*% (x_Assumed.mMSE[[j]] * 
-                                      ((as.vector(y_Assumed.mMSE[[j]])-pi[[j]])*pinv_Assumed_New.mMSE[[j]])^2)
+        pinv_Assumed_New.mMSE[[a]]<-c(1 / PI_Assumed_New.mMSE[[a]], pinv.prop)
+        t(x_Assumed.mMSE[[a]]) %*% (x_Assumed.mMSE[[a]] * 
+                                      ((as.vector(y_Assumed.mMSE[[a]])-pi[[a]])*pinv_Assumed_New.mMSE[[a]])^2)
       })
       
-      V_Final<-lapply(1:length(combs),function(j){
-        Mx[[j]] %*% V_Temp[[j]] %*% Mx[[j]]
+      V_Final<-lapply(1:length(combs),function(a){
+        Mx[[a]] %*% V_Temp[[a]] %*% Mx[[a]]
       })
       
       for(j in 1:length(combs))
