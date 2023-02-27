@@ -17,7 +17,7 @@ Cordeiro<-function(XData,With_bias)
 }
 
 # Using Random Sampling Sub-sample from Big Data ----
-Run_RandomSample <- function(Replicates,FullData,Subsample_Size,N,Choices,No_of_Models)
+Run_RandomSample <- function(Replicates,FullData,Subsample_Size,N,Choices,No_of_Models,Theta)
 {
   #RandomSample<-list()
   #Sample_RS<-list()
@@ -47,7 +47,11 @@ Run_RandomSample <- function(Replicates,FullData,Subsample_Size,N,Choices,No_of_
         Temp_Temp_Data<-Temp_Data[1:Choices[j],]
         Results<-glm(Y~.-1,data=Temp_Temp_Data,family = "poisson")
         Est_Parameter[j,]<-c(Choices[j],Results$coefficients)
-        optimality[j,]<-c(Choices[j], psych::tr(vcov(Results)), det(solve(summary(Results)$cov.unscaled)) )
+        
+        pi_1<-c(exp(as.matrix(Temp_Temp_Data[,-1]) %*% Theta))
+        Mx_1<-t(as.matrix(Temp_Temp_Data[,-1])) %*% (as.matrix(Temp_Temp_Data[,-1]) * pi_1)
+        
+        optimality[j,]<-c(Choices[j], psych::tr(vcov(Results)), det(Mx_1))
         Bias[j,]<-c(Choices[j],Cordeiro(XData = as.matrix(Temp_Temp_Data[,-1]),
                                         With_bias = as.vector(Results$coefficients)))
       }
